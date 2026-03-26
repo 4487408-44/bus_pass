@@ -5,6 +5,7 @@ import json
 import hashlib
 import os
 
+os.chdir(os.path.dirname(__file__))
 PORT = int(os.environ.get("PORT", 8082))
 DB_NAME = "users.db"
 
@@ -97,3 +98,5 @@ if __name__ == "__main__":
     with socketserver.TCPServer(("0.0.0.0", PORT), AuthHandler) as httpd:
         print(f"Serving at http://0.0.0.0:{PORT}")
         httpd.serve_forever()
+        
+        
