@@ -5,7 +5,7 @@ import json
 import hashlib
 import os
 
-PORT = 8082
+PORT = int(os.environ.get("PORT", 8082))
 DB_NAME = "users.db"
 
 # Initialize SQLite Database
@@ -91,6 +91,9 @@ class AuthHandler(http.server.SimpleHTTPRequestHandler):
 
 if __name__ == "__main__":
     init_db()
-    with socketserver.TCPServer(("", PORT), AuthHandler) as httpd:
-        print(f"Serving at http://localhost:{PORT}")
+    import os
+    PORT = int(os.environ.get("PORT", 8082))
+
+    with socketserver.TCPServer(("0.0.0.0", PORT), AuthHandler) as httpd:
+        print(f"Serving at http://0.0.0.0:{PORT}")
         httpd.serve_forever()
