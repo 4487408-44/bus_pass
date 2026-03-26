@@ -1,0 +1,128 @@
+dashboard.html
+../bus-pass-system
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Bus Pass Management</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></svg>
+            BusPass
+        </div>
+        <div class="nav-links">
+            <a href="index.html" onclick="localStorage.clear()">Logout</a>
+        </div>
+    </nav>
+    <div class="container">
+        <!-- Monthly Active Pass Banner -->
+        <div id="monthlyBanner" class="card wide-card" style="display: flex; margin: 0 auto 1.5rem auto; background: linear-gradient(135deg, var(--primary), #1e40af); color: white; border: none; padding: 2rem; justify-content: space-between; align-items: center; border-radius: 16px; box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);">
+            <div>
+                <span style="font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.8; font-weight: 600;">Your Active Pass</span>
+                <h2 id="mBannerTitle" style="font-size: 1.75rem; margin: 0.5rem 0; font-weight: 800;">Monthly Pass</h2>
+                <div id="mBannerRoute" style="font-size: 1.1rem; opacity: 0.9; margin-bottom: 0.25rem;">Route: N/A</div>
+                <div id="mBannerEnd" style="font-size: 0.95rem; opacity: 0.8;">Valid until: Date</div>
+            </div>
+            <div>
+                <a href="view-pass.html?show=monthly" class="btn btn-primary" style="background: white; color: var(--primary);">View Monthly Pass</a>
+            </div>
+        </div>
+        <!-- Daily Active Pass Banner -->
+        <div id="dailyBanner" class="card wide-card" style="display: flex; margin: 0 auto 3rem auto; background: linear-gradient(135deg, #10b981, #047857); color: white; border: none; padding: 2rem; justify-content: space-between; align-items: center; border-radius: 16px; box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3);">
+            <div>
+                <span style="font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.8; font-weight: 600;">Your Active Pass</span>
+                <h2 id="dBannerTitle" style="font-size: 1.75rem; margin: 0.5rem 0; font-weight: 800;">Daily Pass</h2>
+                <div id="dBannerRoute" style="font-size: 1.1rem; opacity: 0.9; margin-bottom: 0.25rem;">Limit: N/A</div>
+                <div id="dBannerEnd" style="font-size: 0.95rem; opacity: 0.8;">Valid until: Date</div>
+            </div>
+            <div>
+                <a href="view-pass.html?show=daily" class="btn btn-primary" style="background: white; color: #10b981;">View Daily Pass</a>
+            </div>
+        </div>
+        <div class="page-header">
+            <h1 class="page-title">Manage & Apply</h1>
+            <p class="page-desc">Choose the type of pass you wish to apply for or renew based on your eligibility.</p>
+        </div>
+        <div class="options-grid" style="grid-template-columns: 1fr 1fr;">
+            <!-- Monthly Pass -->
+            <a href="monthly-menu.html" class="option-card" style="min-height: 250px;">
+                <div class="option-icon" style="font-size: 4rem;">📅</div>
+                <h3 class="option-title" style="font-size: 1.5rem;">Monthly Pass</h3>
+                <p class="option-desc" style="font-size: 1rem;">Apply or renew passes with 30-day validity for Student, Senior Citizen, & Normal categories.</p>
+            </a>
+            
+            <!-- Daily Pass -->
+            <a href="daily-pass.html" class="option-card" style="min-height: 250px;">
+                <div class="option-icon" style="font-size: 4rem;">🎫</div>
+                <h3 class="option-title" style="font-size: 1.5rem;">Daily Pass</h3>
+                <p class="option-desc" style="font-size: 1rem;">Generate a 1-day validity pass for unlimited travels instantly.</p>
+            </a>
+        </div>
+    </div>
+    <script src="script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+             const mType = localStorage.getItem('monthlyPassType');
+             const mEnd = localStorage.getItem('monthlyPassEnd');
+             const dType = localStorage.getItem('dailyPassType');
+             const dEnd = localStorage.getItem('dailyPassEnd');
+             
+             const today = new Date();
+             today.setHours(0,0,0,0);
+             
+             // Monthly Banner Logic
+             const mBanner = document.getElementById('monthlyBanner');
+             const mTitle = document.getElementById('mBannerTitle');
+             const mRoute = document.getElementById('mBannerRoute');
+             const mEndD = document.getElementById('mBannerEnd');
+             
+             if(mType && mEnd) {
+                 const endD = new Date(mEnd);
+                 if (endD < today) {
+                     mTitle.innerHTML = mType + " Pass <span style='background: rgba(239, 68, 68, 0.9); text-transform:uppercase; font-size:0.85rem; padding: 0.25rem 0.75rem; border-radius: 20px; vertical-align: middle; margin-left: 0.5rem;'>Expired</span>";
+                     mBanner.style.background = "linear-gradient(135deg, #64748b, #334155)";
+                 } else {
+                     mTitle.innerHTML = mType + " Pass <span style='background: rgba(16, 185, 129, 0.9); text-transform:uppercase; font-size:0.85rem; padding: 0.25rem 0.75rem; border-radius: 20px; vertical-align: middle; margin-left: 0.5rem;'>Active</span>";
+                 }
+                 mEndD.textContent = "Valid until: " + mEnd;
+                 const mRouteStr = localStorage.getItem('monthlyPassRoute');
+                 mRoute.textContent = "Route: " + (mRouteStr ? mRouteStr.split('–')[0].trim() : 'N/A');
+             } else {
+                 mTitle.innerHTML = "Monthly Pass <span style='background: rgba(255,255,255,0.2); font-size:0.85rem; padding: 0.25rem 0.75rem; border-radius: 20px; vertical-align: middle; margin-left: 0.5rem;'>None Active</span>";
+                 mRoute.textContent = "No pass generated.";
+                 mEndD.textContent = "-";
+             }
+             
+             // Daily Banner Logic
+             const dBanner = document.getElementById('dailyBanner');
+             const dTitle = document.getElementById('dBannerTitle');
+             const dRoute = document.getElementById('dBannerRoute');
+             const dEndD = document.getElementById('dBannerEnd');
+             
+             if(dType && dEnd) {
+                 const endD = new Date(dEnd);
+                 if (endD < today) {
+                     dTitle.innerHTML = "Daily Pass <span style='background: rgba(239, 68, 68, 0.9); text-transform:uppercase; font-size:0.85rem; padding: 0.25rem 0.75rem; border-radius: 20px; vertical-align: middle; margin-left: 0.5rem;'>Expired</span>";
+                     dBanner.style.background = "linear-gradient(135deg, #64748b, #334155)";
+                 } else {
+                     dTitle.innerHTML = "Daily Pass <span style='background: rgba(255, 255, 255, 0.4); text-transform:uppercase; font-size:0.85rem; padding: 0.25rem 0.75rem; border-radius: 20px; vertical-align: middle; margin-left: 0.5rem;'>Active</span>";
+                 }
+                 dEndD.textContent = "Valid until: " + dEnd;
+                 dRoute.textContent = "Limit: " + (localStorage.getItem('dailyPassRoute') || 'N/A');
+             } else {
+                 dTitle.innerHTML = "Daily Pass <span style='background: rgba(255,255,255,0.2); font-size:0.85rem; padding: 0.25rem 0.75rem; border-radius: 20px; vertical-align: middle; margin-left: 0.5rem;'>None Active</span>";
+                 dRoute.textContent = "No pass generated.";
+                 dEndD.textContent = "-";
+             }
+        });
+    </script>
+</body>
+</html>

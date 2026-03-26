@@ -1,0 +1,104 @@
+status.html
+../bus-pass-system
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Status - Bus Pass Management</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path
+                    d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2" />
+                <circle cx="7" cy="17" r="2" />
+                <path d="M9 17h6" />
+                <circle cx="17" cy="17" r="2" />
+            </svg>
+            BusPass
+        </div>
+        <div class="nav-links">
+            <a href="dashboard.html">Back to Dashboard</a>
+        </div>
+    </nav>
+    <div class="container center-layout">
+        <div class="card" style="text-align: center;">
+            <div id="statusIcon" class="status-icon">✅</div>
+            <h2 id="statusTitle" class="status-title">Action Successful</h2>
+            <p id="statusDesc" class="status-desc">Your request has been processed.</p>
+            <div class="progress-container" id="verifyProgressContainer" style="margin-bottom: 2rem; display: none;">
+                <div class="progress-bar" id="verifyProgressBar"></div>
+            </div>
+            <div class="progress-text" id="verifyProgressText" style="margin-bottom: 2rem; display: none;">Verifying documents... 0%</div>
+            <a href="dashboard.html" id="dashboardBtn" class="btn btn-primary">Return to Dashboard</a>
+        </div>
+    </div>
+    <script src="script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            const type = params.get('type');
+            const titleEl = document.getElementById('statusTitle');
+            const descEl = document.getElementById('statusDesc');
+            const iconEl = document.getElementById('statusIcon');
+            if (type === 'renewal') {
+                titleEl.textContent = "Pass Renewed Successfully!";
+                descEl.textContent = "Your pass renewal payment is confirmed. Your digital pass has been updated immediately to reflect the new 30-day validity.";
+                iconEl.textContent = "✅";
+                iconEl.className = "status-icon";
+            } else if (type === 'daily_pass') {
+                titleEl.textContent = "Daily Pass Active!";
+                descEl.textContent = "Your 1-day travel limit pass is successfully generated. You can now track it in your dashboard as an active digital pass.";
+                iconEl.textContent = "✅";
+                iconEl.className = "status-icon";
+            } else if (type === 'new_pass') {
+                titleEl.textContent = "Verifying Documents...";
+                descEl.textContent = "Please wait while our automated system checks your submitted documents for validity and authenticity.";
+                iconEl.textContent = "⚙️";
+                iconEl.className = "status-icon";
+                
+                const pContainer = document.getElementById('verifyProgressContainer');
+                const pBar = document.getElementById('verifyProgressBar');
+                const pText = document.getElementById('verifyProgressText');
+                const btn = document.getElementById('dashboardBtn');
+                
+                pContainer.style.display = 'block';
+                pText.style.display = 'block';
+                btn.style.display = 'none';
+                
+                let progress = 0;
+                const interval = setInterval(() => {
+                    progress += Math.floor(Math.random() * 15) + 5;
+                    if (progress >= 100) {
+                        progress = 100;
+                        clearInterval(interval);
+                        pBar.style.width = '100%';
+                        pText.style.display = 'none';
+                        pContainer.style.display = 'none';
+                        
+                        titleEl.textContent = "Verification Complete";
+                        descEl.textContent = "Your documents have been verified and your new pass is generated! It is now active on your dashboard.";
+                        iconEl.textContent = "✅";
+                        iconEl.className = "status-icon";
+                        btn.style.display = 'inline-flex';
+                    } else {
+                        pBar.style.width = progress + '%';
+                        pText.textContent = 'Verifying documents... ' + progress + '%';
+                    }
+                }, 400);
+            } else {
+                titleEl.textContent = "Action Captured";
+                descEl.textContent = "Your recent request has been captured by the system.";
+            }
+        });
+    </script>
+</body>
+</html>

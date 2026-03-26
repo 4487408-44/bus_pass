@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Management</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        .admin-table th, .admin-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        .admin-table th {
+            background-color: var(--surface);
+            font-weight: 600;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+        }
+        .badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .badge-pending {
+            background-color: #fef3c7;
+            color: #b45309;
+        }
+        .badge-approved {
+            background-color: #d1fae5;
+            color: #047857;
+        }
+        .action-btns {
+            display: flex;
+            gap: 0.5rem;
+        }
+        .btn-small {
+            padding: 0.4rem 0.75rem;
+            font-size: 0.8rem;
+            border-radius: 4px;
+        }
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            align-items: center; justify-content: center;
+            z-index: 100;
+        }
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: var(--radius);
+            max-width: 500px;
+            width: 90%;
+            box-shadow: var(--shadow-hover);
+        }
+        .doc-view-link {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0.75rem; border: 1px solid var(--border); border-radius: 6px;
+            margin-bottom: 0.5rem; background: var(--surface);
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+            Manager Portal
+        </div>
+        <div class="nav-links">
+            <a href="index.html">Admin Logout</a>
+        </div>
+    </nav>
+    <div class="container">
+        <div class="page-header" style="text-align: left; margin-bottom: 2rem;">
+            <h1 class="page-title" style="font-size: 1.8rem;">Verification Queue</h1>
+            <p class="page-desc" style="margin: 0;">Review and process pending bus pass applications.</p>
+        </div>
+        <div class="card wide-card" style="max-width: 1000px; padding: 1.5rem;">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Applicant Name</th>
+                        <th>Pass Category</th>
+                        <th>Bus Route</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="applicationsBody">
+                    <tr id="row1">
+                        <td><strong>Rajesh Kumar</strong><br><span style="font-size:0.8rem; color:var(--text-muted);">Student (2nd Year)</span></td>
+                        <td>Student Pass</td>
+                        <td>309 - Dehu Gaon</td>
+                        <td><span class="badge badge-pending" id="status1">Pending</span></td>
+                        <td>
+                            <div class="action-btns" id="actions1">
+                                <button class="btn btn-secondary btn-small" onclick="viewDocuments(1, 'Rajesh Kumar', 'Student')">View Docs</button>
+                                <button class="btn btn-primary btn-small" style="background-color: #10b981;" onclick="processApp(1, 'Approve')">Approve</button>
+                                <button class="btn btn-primary btn-small" style="background-color: #ef4444;" onclick="processApp(1, 'Reject')">Reject</button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr id="row2">
+                        <td><strong>Sita Deshmukh</strong><br><span style="font-size:0.8rem; color:var(--text-muted);">Age: 65</span></td>
+                        <td>Senior Citizen</td>
+                        <td>323 - Chikhali</td>
+                        <td><span class="badge badge-pending" id="status2">Pending</span></td>
+                        <td>
+                            <div class="action-btns" id="actions2">
+                                <button class="btn btn-secondary btn-small" onclick="viewDocuments(2, 'Sita Deshmukh', 'Senior Citizen')">View Docs</button>
+                                <button class="btn btn-primary btn-small" style="background-color: #10b981;" onclick="processApp(2, 'Approve')">Approve</button>
+                                <button class="btn btn-primary btn-small" style="background-color: #ef4444;" onclick="processApp(2, 'Reject')">Reject</button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr id="row3">
+                        <td><strong>Anil Sharma</strong><br><span style="font-size:0.8rem; color:var(--text-muted);">Commuter</span></td>
+                        <td>Normal Passenger</td>
+                        <td>343A - Bhosari</td>
+                        <td><span class="badge badge-approved" id="status3">Approved</span></td>
+                        <td>
+                            <span style="font-size: 0.85rem; color: var(--text-muted);">Processed</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <!-- Document Modal -->
+    <div id="docModal" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 1rem;" id="modalTitle">Reviewing Documents</h3>
+            <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.5rem;">Please thoroughly check the submitted image files and PDFs.</p>
+            
+            <div id="modalDocList">
+                <!-- Dynamically filled -->
+            </div>
+            <button class="btn btn-secondary" style="margin-top: 1.5rem;" onclick="closeModal()">Close Viewer</button>
+        </div>
+    </div>
+    <script>
+        function viewDocuments(id, name, category) {
+            document.getElementById('modalTitle').textContent = `Reviewing: ${name}`;
+            const list = document.getElementById('modalDocList');
+            
+            let docsHTML = '<div class="doc-view-link"><span>Passport Photo (JPG)</span> <button class="btn btn-secondary btn-small">Preview 👁</button></div>';
+            
+            if(category === 'Student') {
+                docsHTML += '<div class="doc-view-link"><span>Bonafide Certificate (PDF)</span> <button class="btn btn-secondary btn-small">Preview 👁</button></div>';
+                docsHTML += '<div class="doc-view-link"><span>Fees Receipt (PDF)</span> <button class="btn btn-secondary btn-small">Preview 👁</button></div>';
+            } else if (category === 'Senior Citizen') {
+                docsHTML += '<div class="doc-view-link"><span>Age Proof / Aadhar (PDF)</span> <button class="btn btn-secondary btn-small">Preview 👁</button></div>';
+            } else {
+                docsHTML += '<div class="doc-view-link"><span>Identity Proof (PDF)</span> <button class="btn btn-secondary btn-small">Preview 👁</button></div>';
+            }
+            
+            docsHTML += '<div class="doc-view-link"><span>Address Proof (PDF)</span> <button class="btn btn-secondary btn-small">Preview 👁</button></div>';
+            
+            list.innerHTML = docsHTML;
+            document.getElementById('docModal').style.display = 'flex';
+        }
+        function closeModal() {
+            document.getElementById('docModal').style.display = 'none';
+        }
+        function processApp(id, action) {
+            const statusBadge = document.getElementById('status' + id);
+            const actionDiv = document.getElementById('actions' + id);
+            if (action === 'Approve') {
+                statusBadge.textContent = 'Approved';
+                statusBadge.className = 'badge badge-approved';
+                statusBadge.style.backgroundColor = '#d1fae5';
+                statusBadge.style.color = '#047857';
+            } else {
+                statusBadge.textContent = 'Rejected';
+                statusBadge.className = 'badge badge-pending';
+                statusBadge.style.backgroundColor = '#fee2e2';
+                statusBadge.style.color = '#b91c1c';
+            }
+            
+            actionDiv.innerHTML = `<span style="font-size: 0.85rem; color: var(--text-muted);">Processed (${action})</span>`;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Pass - Bus Pass Management</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path
+                    d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2" />
+                <circle cx="7" cy="17" r="2" />
+                <path d="M9 17h6" />
+                <circle cx="17" cy="17" r="2" />
+            </svg>
+            BusPass
+        </div>
+        <div class="nav-links">
+            <a href="pass-action.html">Back</a>
+        </div>
+    </nav>
+    <div class="container center-layout" style="align-items: flex-start; margin-top: 2rem;">
+        <div class="card wide-card">
+            <h2 class="card-title">Apply for New <span id="newPassTypeHeader"></span> Pass</h2>
+            <p class="card-subtitle">Please provide your travel and documentation details for verification.</p>
+            <form onsubmit="handleNewPassSubmit(event)">
+                <!-- Travel Details Section -->
+                <h3 style="margin-bottom: 1rem; font-size: 1.1rem;">Travel Information</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Bus Number</label>
+                        <select class="form-control" id="routeSelect" required onchange="handleRouteSelection(this)">
+                            <option value="">Select a Route</option>
+                            <option value="309">309 – Dehu Gaon → Alandi (via Chikhali, Moshi)</option>
+                            <option value="309A">309A – Dehu Gaon → Alandi (alternate route)</option>
+                            <option value="330">330 – Dehu Gaon → Alandi (via Chikhali, Moshi)</option>
+                            <option value="362">362 – Alandi → YCM (via Moshi)</option>
+                            <option value="323">323 – Chikhali → PMC (via Moshi, Pimpri)</option>
+                            <option value="326">326 – Pimpri → Chikhali</option>
+                            <option value="358B">358B – Chakan Ambethan Chowk → Bhosari</option>
+                            <option value="343A">343A – Bhosari → Talegaon Dabhade (via Chakan side)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Source Station</label>
+                        <input type="text" class="form-control" id="srcCity" placeholder="Starting point" required readonly style="background-color: #f1f5f9;">
+                    </div>
+                    <div class="form-group">
+                        <label>Destination Station</label>
+                        <input type="text" class="form-control" id="destCity" placeholder="Ending point" required readonly style="background-color: #f1f5f9;">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Pass Duration</label>
+                        <select class="form-control" id="passDuration" required onchange="calcNewEndDate()">
+                            <option value="1">1 Month</option>
+                            <option value="3">3 Months</option>
+                            <option value="6">6 Months</option>
+                            <option value="12">1 Year</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Calculated Fare (₹)</label>
+                        <input type="text" class="form-control" id="calcFare" value="₹ 750" readonly
+                            style="background-color: #f1f5f9; color: var(--primary); font-weight: 700;">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Start Date</label>
+                        <input type="date" class="form-control" id="startNewDate" required onchange="calcNewEndDate()">
+                    </div>
+                    <div class="form-group">
+                        <label>Calculated End Date</label>
+                        <input type="date" class="form-control" id="endNewDate" readonly
+                            style="background-color: #f1f5f9;">
+                    </div>
+                </div>
+                <hr style="border:0; border-top:1px solid var(--border); margin: 2rem 0;">
+                <!-- Document Checklist Section dynamically injected via JS -->
+                <h3 style="margin-bottom: 1rem; font-size: 1.1rem;">Personal & Document Details</h3>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+                    Please provide your details and upload the specific documents in the required formats.
+                </p>
+                <div id="dynamicDocList" class="doc-list" style="background: none; border: none; padding: 0;">
+                    <!-- Checklists injected here based on category -->
+                </div>
+                <button type="submit" class="btn btn-primary" id="submitBtn" style="margin-top: 1rem;">Submit & Upload</button>
+                
+                <div class="progress-container" id="progressContainer">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
+                <div class="progress-text" id="progressText">Uploading... 0%</div>
+            </form>
+        </div>
+    </div>
+    <script src="script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const passType = localStorage.getItem('selectedPassType') || 'Normal';
+            document.getElementById('newPassTypeHeader').textContent = passType;
+            // Date initialization
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('startNewDate').setAttribute('min', today);
+            document.getElementById('startNewDate').value = today;
+            calcNewEndDate();
+            // Populate dynamic checklist based on the type
+            const docContainer = document.getElementById('dynamicDocList');
+            // Content maps based on requirements
+            const docChecklists = {
+                'Student': `
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Full Name</label>
+                            <input type="text" id="fullName" class="form-control" placeholder="e.g. John Doe" required>
+                        </div>
+                        <div class="form-group">
+                            <label>College / School Name</label>
+                            <input type="text" class="form-control" placeholder="e.g. Modern College" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Class / Year</label>
+                            <input type="text" class="form-control" placeholder="e.g. 2nd Year B.Sc" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Passport Size Photo (JPG/PNG)</label>
+                            <input type="file" class="form-control" accept=".jpg, .jpeg, .png" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Bonafide Certificate (PDF/DOCX)</label>
+                            <input type="file" class="form-control" accept=".pdf, .docx, .doc" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Latest Fees Receipt (PDF/DOCX)</label>
+                            <input type="file" class="form-control" accept=".pdf, .docx, .doc" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Aadhar Card (PDF/JPG)</label>
+                            <input type="file" class="form-control" accept=".pdf, .jpg, .jpeg" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Address Proof (Light Bill/Tax) (PDF)</label>
+                            <input type="file" class="form-control" accept=".pdf" required>
+                        </div>
+                    </div>
+                 `,
+                'Senior Citizen': `
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Full Name</label>
+                            <input type="text" id="fullName" class="form-control" placeholder="e.g. Jane Doe" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Passport Size Photo (JPG/PNG)</label>
+                            <input type="file" class="form-control" accept=".jpg, .jpeg, .png" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Age Proof (PAN / Aadhar) (PDF/JPG)</label>
+                            <input type="file" class="form-control" accept=".pdf, .jpg, .jpeg" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Address Proof (Light Bill/Tax) (PDF)</label>
+                            <input type="file" class="form-control" accept=".pdf" required>
+                        </div>
+                    </div>
+                 `,
+                'Normal': `
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Full Name</label>
+                            <input type="text" id="fullName" class="form-control" placeholder="e.g. Mark Smith" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Passport Size Photo (JPG/PNG)</label>
+                            <input type="file" class="form-control" accept=".jpg, .jpeg, .png" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Identity Proof (Aadhar/Voter ID) (PDF/JPG)</label>
+                            <input type="file" class="form-control" accept=".pdf, .jpg, .jpeg" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Address Proof (Light Bill) (PDF)</label>
+                            <input type="file" class="form-control" accept=".pdf" required>
+                        </div>
+                    </div>
+                 `
+            };
+            docContainer.innerHTML = docChecklists[passType] || docChecklists['Normal'];
+        });
+        function calcNewEndDate() {
+            const startInput = document.getElementById('startNewDate').value;
+            const duration = parseInt(document.getElementById('passDuration')?.value || 1);
+            if (!startInput) return;
+            const date = new Date(startInput);
+            date.setMonth(date.getMonth() + duration);
+            document.getElementById('endNewDate').value = date.toISOString().split('T')[0];
+            // Update Fare dynamically
+            const fares = { 1: "₹ 750", 3: "₹ 2000", 6: "₹ 3000", 12: "₹ 5000" };
+            const fareInput = document.getElementById('calcFare');
+            if (fareInput) {
+                fareInput.value = fares[duration] || "₹ 750";
+            }
+        }
+        function handleRouteSelection(select) {
+            if (!select.value) {
+                document.getElementById('srcCity').value = '';
+                document.getElementById('destCity').value = '';
+                return;
+            }
+            const text = select.options[select.selectedIndex].text;
+            const match = text.match(/–\s*(.+?)\s*→\s*(.+?)(?:\s*\(|$)/);
+            if (match) {
+                document.getElementById('srcCity').value = match[1].trim();
+                document.getElementById('destCity').value = match[2].trim();
+            }
+        }
+        function handleNewPassSubmit(e) {
+            e.preventDefault();
+            
+            const btn = document.getElementById('submitBtn');
+            const progressContainer = document.getElementById('progressContainer');
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            
+            btn.disabled = true;
+            btn.style.opacity = "0.7";
+            // Save details to localStorage to show in dashboard/view-pass
+            const busSelect = document.getElementById('routeSelect');
+            if(busSelect && busSelect.value) {
+                const text = busSelect.options[busSelect.selectedIndex].text;
+                localStorage.setItem('monthlyPassBus', text.split('–')[0].trim());
+                localStorage.setItem('monthlyPassRoute', text);
+            }
+            
+            const nameInput = document.getElementById('fullName');
+            if(nameInput) {
+                localStorage.setItem('monthlyPassName', nameInput.value);
+            }
+            localStorage.setItem('monthlyPassType', document.getElementById('newPassTypeHeader').textContent);
+            localStorage.setItem('monthlyPassEnd', document.getElementById('endNewDate').value);
+            localStorage.setItem('monthlyPassSrc', document.getElementById('srcCity').value);
+            localStorage.setItem('monthlyPassDest', document.getElementById('destCity').value);
+            
+            progressContainer.style.display = 'block';
+            progressText.style.display = 'block';
+            
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.floor(Math.random() * 8) + 4; // Random jump 4-11%
+                if (progress >= 100) {
+                    progress = 100;
+                    clearInterval(interval);
+                    progressBar.style.width = '100%';
+                    progressText.textContent = 'Upload Complete! Redirecting to Payment... 100%';
+                    
+                    setTimeout(() => {
+                        window.location.href = "payment.html?source=new_pass";
+                    }, 600);
+                } else {
+                    progressBar.style.width = progress + '%';
+                    progressText.textContent = 'Uploading documents... ' + progress + '%';
+                }
+            }, 180);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Pass - Bus Pass Management</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></svg>
+            BusPass
+        </div>
+        <div class="nav-links">
+            <a href="dashboard.html">Back to Dashboard</a>
+        </div>
+    </nav>
+    <div class="container center-layout" style="align-items: flex-start; margin-top: 2rem;">
+        <div class="card wide-card">
+            <h2 class="card-title">Apply for Daily Pass</h2>
+            <p class="card-subtitle">Generate a 1-day validity pass for travel across PMC/PCMC or all limits.</p>
+            <form onsubmit="handleDailyPassSubmit(event)">
+                <h3 style="margin-bottom: 1rem; font-size: 1.1rem;">Personal Details</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" id="dailyName" class="form-control" placeholder="Applicant Name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Last 4 Digits of Aadhar Card</label>
+                        <input type="text" id="dailyAadhar" class="form-control" placeholder="e.g. 5678" pattern="[0-9]{4}" maxlength="4" required>
+                    </div>
+                </div>
+                <hr style="border:0; border-top:1px solid var(--border); margin: 2rem 0;">
+                <h3 style="margin-bottom: 1rem; font-size: 1.1rem;">Pass Options</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Select Pass Route Limit</label>
+                        <select class="form-control" id="dailyRoute" required onchange="updateDailyFare()">
+                            <option value="">Select Limit</option>
+                            <option value="70">PMC & PCMC Only (₹ 70)</option>
+                            <option value="150">All Routes (₹ 150)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Calculated Fare</label>
+                        <input type="text" id="dailyFare" class="form-control" value="₹ 0" readonly style="background-color: #f1f5f9; color: var(--primary); font-weight: 700;">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Validity Date (Today)</label>
+                        <input type="date" id="dailyDate" class="form-control" readonly style="background-color: #f1f5f9; color: var(--primary); font-weight: 600;">
+                    </div>
+                </div>
+                <button type="submit" id="dailySubmit" class="btn btn-primary" style="margin-top: 1rem;">Proceed to Payment</button>
+            </form>
+        </div>
+    </div>
+    <script src="script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('dailyDate').value = today;
+        });
+        function updateDailyFare() {
+            const routeVal = document.getElementById('dailyRoute').value;
+            if (routeVal === '70') {
+                document.getElementById('dailyFare').value = '₹ 70';
+            } else if (routeVal === '150') {
+                document.getElementById('dailyFare').value = '₹ 150';
+            } else {
+                document.getElementById('dailyFare').value = '₹ 0';
+            }
+        }
+        function handleDailyPassSubmit(e) {
+            e.preventDefault();
+            const btn = document.getElementById('dailySubmit');
+            btn.textContent = "Redirecting...";
+            btn.style.opacity = "0.7";
+            btn.disabled = true;
+            const routeSelect = document.getElementById('dailyRoute');
+            const routeText = routeSelect.options[routeSelect.selectedIndex].text.split('(')[0].trim();
+            const today = document.getElementById('dailyDate').value;
+            
+            // Save to local storage
+            localStorage.setItem('dailyPassType', 'Daily');
+            localStorage.setItem('dailyPassName', document.getElementById('dailyName').value);
+            localStorage.setItem('dailyPassRoute', routeText);
+            localStorage.setItem('dailyPassEnd', today);
+            setTimeout(() => {
+                window.location.href = "payment.html?source=daily_pass";
+            }, 600);
+        }
+    </script>
+</body>
+</html>

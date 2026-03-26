@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment - Bus Pass Management</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .payment-methods {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .pay-method {
+            flex: 1;
+            padding: 1rem;
+            border: 2px solid var(--border);
+            border-radius: var(--radius);
+            text-align: center;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .pay-method.active, .pay-method:hover {
+            border-color: var(--primary);
+            background: rgba(37, 99, 235, 0.05);
+            color: var(--primary);
+        }
+        .qr-placeholder {
+            width: 150px;
+            height: 150px;
+            margin: 0 auto;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%232563eb" stroke-width="1.5"><path d="M3 3h8v8H3zM13 3h8v8h-8zM3 13h8v8H3zM13 13h3v3h-3zM18 13h3v3h-3zM13 18h3v3h-3zM18 18h3v3h-3z"/></svg>') no-repeat center center;
+            background-size: contain;
+        }
+        .payment-section.hidden {
+            display: none;
+        }
+        .upi-toggle {
+            padding: 0.5rem;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></svg>
+            BusPass
+        </div>
+        <div class="nav-links">
+            <a href="renewal.html">Cancel / Back</a>
+        </div>
+    </nav>
+    <div class="container center-layout" style="align-items: flex-start; margin-top: 2rem;">
+        <div class="card wide-card" style="max-width: 600px;">
+            <h2 class="card-title">Complete Payment</h2>
+            <p class="card-subtitle">Select a payment method to complete your renewal.</p>
+            <div style="background: var(--surface); padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem; border: 1px dashed var(--border); text-align: center;">
+                <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.5rem;">Amount to Pay</p>
+                <h1 style="font-size: 2.5rem; color: var(--text-main);">₹ 850</h1>
+            </div>
+            <div class="payment-methods">
+                <div class="pay-method active" onclick="selectMainMethod(this, 'cardSection')">💳 Card</div>
+                <div class="pay-method" onclick="selectMainMethod(this, 'upiSection')">📱 UPI</div>
+                <div class="pay-method" onclick="selectMainMethod(this, 'netbankingSection')">🏦 NetBanking</div>
+            </div>
+            <form id="paymentForm" onsubmit="processPayment(event)">
+                <!-- CARD SECTION -->
+                <div id="cardSection" class="payment-section">
+                    <div class="form-group">
+                        <label>Card Number</label>
+                        <input type="text" class="form-control" placeholder="**** **** **** ****" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Expiry / Validity</label>
+                            <input type="text" class="form-control" placeholder="MM/YY" required>
+                        </div>
+                        <div class="form-group">
+                            <label>CVV / PIN</label>
+                            <input type="password" class="form-control" placeholder="***" required>
+                        </div>
+                    </div>
+                </div>
+                <!-- UPI SECTION -->
+                <div id="upiSection" class="payment-section hidden">
+                    <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
+                        <div class="pay-method upi-toggle active" id="upiIdTab" onclick="toggleUpi('id')">Enter UPI ID</div>
+                        <div class="pay-method upi-toggle" id="upiQrTab" onclick="toggleUpi('qr')">Scan QR Option</div>
+                    </div>
+                    
+                    <div id="upiIdBlock">
+                        <div class="form-group">
+                            <label>Enter your UPI ID (VPA)</label>
+                            <input type="text" id="upiInput" class="form-control" placeholder="xyz@ybl or 9876543210@upi">
+                        </div>
+                    </div>
+                    <div id="upiQrBlock" class="hidden" style="text-align: center;">
+                        <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1rem;">Scan with PhonePe, GPay, or Paytm</p>
+                        <div class="qr-placeholder" style="margin-bottom: 1rem;"></div>
+                    </div>
+                </div>
+                <!-- NETBANKING SECTION -->
+                <div id="netbankingSection" class="payment-section hidden">
+                    <div class="form-group">
+                        <label>Select Bank</label>
+                        <select class="form-control">
+                            <option>HDFC Bank</option>
+                            <option>State Bank of India</option>
+                            <option>ICICI Bank</option>
+                            <option>Axis Bank</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary" style="margin-top: 1.5rem; font-size: 1.1rem; padding: 1rem;">Pay ₹ 850 Securely</button>
+            </form>
+        </div>
+    </div>
+    <script src="script.js"></script>
+    <script>
+        function selectMainMethod(el, sectionId) {
+            // Update tabs
+            document.querySelectorAll('.payment-methods .pay-method').forEach(item => item.classList.remove('active'));
+            el.classList.add('active');
+            // Show target section, hide rest
+            document.querySelectorAll('.payment-section').forEach(sec => sec.classList.add('hidden'));
+            document.getElementById(sectionId).classList.remove('hidden');
+            // Manage required attributes strictly on visible fields
+            const allInputs = document.querySelectorAll('.payment-section input, .payment-section select');
+            allInputs.forEach(input => input.removeAttribute('required'));
+            if (sectionId === 'cardSection') {
+                document.querySelectorAll('#cardSection input').forEach(inp => inp.setAttribute('required', 'true'));
+            } else if (sectionId === 'upiSection' && !document.getElementById('upiQrBlock').classList.contains('hidden')) {
+                // do nothing, qr doesn't need input
+            } else if (sectionId === 'upiSection') {
+                document.getElementById('upiInput').setAttribute('required', 'true');
+            }
+        }
+        function toggleUpi(type) {
+            document.getElementById('upiIdTab').classList.remove('active');
+            document.getElementById('upiQrTab').classList.remove('active');
+            if (type === 'id') {
+                document.getElementById('upiIdTab').classList.add('active');
+                document.getElementById('upiIdBlock').classList.remove('hidden');
+                document.getElementById('upiQrBlock').classList.add('hidden');
+                document.getElementById('upiInput').setAttribute('required', 'true');
+            } else {
+                document.getElementById('upiQrTab').classList.add('active');
+                document.getElementById('upiQrBlock').classList.remove('hidden');
+                document.getElementById('upiIdBlock').classList.add('hidden');
+                document.getElementById('upiInput').removeAttribute('required');
+            }
+        }
+        function processPayment(e) {
+            e.preventDefault();
+            const btn = e.target.querySelector('button');
+            btn.textContent = "Processing Payment...";
+            btn.style.opacity = "0.7";
+            btn.disabled = true;
+            setTimeout(() => {
+                const params = new URLSearchParams(window.location.search);
+                const source = params.get('source');
+                if (source === 'new_pass') {
+                    window.location.href = "status.html?type=new_pass";
+                } else if (source === 'daily_pass') {
+                    window.location.href = "status.html?type=daily_pass";
+                } else {
+                    window.location.href = "status.html?type=renewal";
+                }
+            }, 1500);
+        }
+    </script>
+</body>
+</html>

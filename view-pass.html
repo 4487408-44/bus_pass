@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Pass - Bus Pass Management</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .digital-pass-card {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+            max-width: 400px;
+            width: 100%;
+            margin: 2rem auto;
+            position: relative;
+            border: 1px solid var(--border);
+        }
+        .pass-header {
+            background: linear-gradient(135deg, var(--primary), #1e40af);
+            color: white;
+            padding: 2rem 1.5rem;
+            text-align: center;
+            position: relative;
+        }
+        .pass-type-badge {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: inline-block;
+            margin-bottom: 1rem;
+            backdrop-filter: blur(4px);
+        }
+        .pass-user-photo {
+            width: 100px;
+            height: 100px;
+            background: white;
+            border-radius: 50%;
+            margin: 0 auto;
+            border: 4px solid rgba(255, 255, 255, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: var(--primary);
+            box-shadow: var(--shadow);
+            position: absolute;
+            bottom: -50px;
+            left: 50%;
+            transform: translateX(-50%);
+            overflow: hidden;
+        }
+        .pass-body {
+            padding: 4rem 2rem 2rem 2rem;
+            background: white;
+        }
+        .pass-name {
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--text-main);
+            margin-bottom: 0.25rem;
+        }
+        .pass-id {
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+            font-family: monospace;
+        }
+        .pass-details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+        }
+        .detail-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.25rem;
+        }
+        .detail-value {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+        .route-path {
+            background: var(--surface);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            border: 1px dashed var(--border);
+        }
+        .route-path .detail-value {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 0.5rem;
+        }
+        .qr-placeholder {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%230f172a" stroke-width="1.5"><path d="M3 3h8v8H3zM13 3h8v8h-8zM3 13h8v8H3zM13 13h3v3h-3zM18 13h3v3h-3zM13 18h3v3h-3zM18 18h3v3h-3z"/></svg>') no-repeat center center;
+            background-size: contain;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></svg>
+            BusPass
+        </div>
+        <div class="nav-links">
+            <a href="dashboard.html">Back to Dashboard</a>
+        </div>
+    </nav>
+    <div class="container" style="display: flex; gap: 2rem; justify-content: center; flex-wrap: wrap;">
+        <!-- MONTHLY PASS -->
+        <div class="digital-pass-card" id="monthlyCard" style="display: none;">
+            <div class="pass-header">
+                <div class="pass-type-badge" id="vpTypeBadge">MONTHLY STUDENT PASS</div>
+                <h3 style="font-size: 1.25rem; font-weight: 500; opacity: 0.9;">PMPML Digital Pass</h3>
+                <div class="pass-user-photo">👤</div>
+            </div>
+            <div class="pass-body">
+                <div class="pass-name" id="vpName">Applicant</div>
+                <div class="pass-id">BP-2026-98442-STD</div>
+                <div class="route-path">
+                    <div class="detail-label">Travel Route</div>
+                    <div class="detail-value">
+                        <span id="vpSrc">City Center</span>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary);"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        <span id="vpDest">North Point</span>
+                    </div>
+                </div>
+                <div class="pass-details-grid">
+                    <div class="detail-item">
+                        <span class="detail-label">Bus Number</span>
+                        <span class="detail-value" id="vpBus" style="color: var(--primary); font-size: 1.2rem;">MH12-RN-45</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Route Details</span>
+                        <span class="detail-value" id="vpRouteDesc">42</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Start Date</span>
+                        <span class="detail-value" id="vpStart">24 Mar 2026</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Valid Until</span>
+                        <span class="detail-value" id="vpEnd">23 Apr 2026</span>
+                    </div>
+                </div>
+                <div style="text-align: center; margin-top: 1rem; border-top: 1px solid var(--border); padding-top: 2rem;">
+                    <div class="detail-label" style="margin-bottom: 1rem;">Scanning QR Code</div>
+                    <div class="qr-placeholder"></div>
+                </div>
+            </div>
+        </div>
+        <!-- DAILY PASS -->
+        <div class="digital-pass-card" id="dailyCard" style="display: none;">
+            <div class="pass-header" style="background: linear-gradient(135deg, #10b981, #047857);">
+                <div class="pass-type-badge" id="dailyTypeBadge">DAILY PASS</div>
+                <h3 style="font-size: 1.25rem; font-weight: 500; opacity: 0.9;">PMPML Digital Pass</h3>
+                <div class="pass-user-photo" style="color: #10b981;">👤</div>
+            </div>
+            <div class="pass-body">
+                <div class="pass-name" id="dailyName">Applicant</div>
+                <div class="pass-id">BP-DAILY-83921</div>
+                <div class="route-path">
+                    <div class="detail-label">Travel Limit</div>
+                    <div class="detail-value">
+                        <span id="dailyRouteVal">PMC & PCMC Only</span>
+                    </div>
+                </div>
+                <div class="pass-details-grid" style="grid-template-columns: 1fr;">
+                    <div class="detail-item" style="text-align: center;">
+                        <span class="detail-label">Validity (1 Day)</span>
+                        <span class="detail-value" id="dailyDateVal" style="color: #10b981; font-size: 1.25rem;">Date</span>
+                    </div>
+                </div>
+                <div style="text-align: center; margin-top: 1rem; border-top: 1px solid var(--border); padding-top: 2rem;">
+                    <div class="detail-label" style="margin-bottom: 1rem;">Scanning QR Code</div>
+                    <div class="qr-placeholder"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="noPassState" style="text-align: center; width: 100%; display: none; margin-top: 5rem; color: var(--text-muted);">
+            <div style="font-size: 4rem; opacity: 0.5;">🪪</div>
+            <h2 style="margin-top: 1rem;">No Active Passes Found</h2>
+            <p>Please navigate back to the dashboard to apply for a Monthly or Daily Pass.</p>
+        </div>
+    </div>
+    <script src="script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            let hasPass = false;
+            const params = new URLSearchParams(window.location.search);
+            const showOnly = params.get('show');
+            // Monthly
+            const mType = localStorage.getItem('monthlyPassType');
+            const mEnd = localStorage.getItem('monthlyPassEnd');
+            if(mType && mEnd && (!showOnly || showOnly === 'monthly')) {
+                document.getElementById('monthlyCard').style.display = 'block';
+                hasPass = true;
+                
+                let passTitle = 'MONTHLY ' + mType.toUpperCase() + ' PASS';
+                const endD = new Date(mEnd);
+                if (endD < today) {
+                    passTitle += ` <span style="background: #ef4444; color: white; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.75rem; vertical-align: middle;">EXPIRED</span>`;
+                    document.getElementById('monthlyCard').style.filter = "grayscale(100%)";
+                } else {
+                    passTitle += ` <span style="background: #10b981; color: white; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.75rem; vertical-align: middle;">ACTIVE</span>`;
+                }
+                document.getElementById('vpTypeBadge').innerHTML = passTitle;
+                document.getElementById('vpName').textContent = localStorage.getItem('monthlyPassName') || 'Applicant Name';
+                document.getElementById('vpSrc').textContent = localStorage.getItem('monthlyPassSrc') || '';
+                document.getElementById('vpDest').textContent = localStorage.getItem('monthlyPassDest') || '';
+                document.getElementById('vpBus').textContent = localStorage.getItem('monthlyPassBus') || '';
+                const activeRoute = localStorage.getItem('monthlyPassRoute');
+                if(activeRoute) document.getElementById('vpRouteDesc').textContent = activeRoute.length > 20 ? activeRoute.substring(0, 15) + "..." : activeRoute;
+                
+                document.getElementById('vpEnd').textContent = mEnd;
+                const d = new Date(mEnd);
+                d.setMonth(d.getMonth() - 1);
+                document.getElementById('vpStart').textContent = d.toISOString().split('T')[0];
+            }
+            // Daily
+            const dName = localStorage.getItem('dailyPassName');
+            const dEnd = localStorage.getItem('dailyPassEnd');
+            if(dName && dEnd && (!showOnly || showOnly === 'daily')) {
+                document.getElementById('dailyCard').style.display = 'block';
+                hasPass = true;
+                let dTitle = 'DAILY PASS';
+                const dDateObj = new Date(dEnd);
+                if (dDateObj < today) {
+                    dTitle += ` <span style="background: #ef4444; color: white; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.75rem; vertical-align: middle;">EXPIRED</span>`;
+                    document.getElementById('dailyCard').style.filter = "grayscale(100%)";
+                } else {
+                    dTitle += ` <span style="background: rgba(255,255,255,0.4); color: white; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.75rem; vertical-align: middle;">ACTIVE</span>`;
+                }
+                document.getElementById('dailyTypeBadge').innerHTML = dTitle;
+                
+                document.getElementById('dailyName').textContent = dName;
+                document.getElementById('dailyRouteVal').textContent = localStorage.getItem('dailyPassRoute') || 'All Routes';
+                document.getElementById('dailyDateVal').textContent = dEnd;
+            }
+            if(!hasPass) {
+                document.getElementById('noPassState').style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
