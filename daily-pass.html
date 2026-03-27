@@ -90,6 +90,29 @@
             localStorage.setItem('dailyPassName', document.getElementById('dailyName').value);
             localStorage.setItem('dailyPassRoute', routeText);
             localStorage.setItem('dailyPassEnd', today);
+			 const userId = localStorage.getItem('user_id'); // Make sure user_id is saved in localStorage at login
+    if (userId) {
+        const passData = {
+            user_id: parseInt(userId),
+            pass_type: 'Daily',
+            bus_number: routeText, // Using the routeText extracted earlier in your function
+            issue_date: today,     // Starts today
+            expiry_date: today     // Expires today (1-day validity)
+        };
+
+        fetch('http://localhost:8082/add_pass', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(passData)
+        })
+        .then(res => res.json())
+        .then(data => console.log('Daily Pass Stored in DB:', data))
+        .catch(err => console.error('Error storing pass:', err));
+    } else {
+        console.warn('User ID missing. DB storage skipped.');
+    }
+    // -------------------------------------------------------------
+
             setTimeout(() => {
                 window.location.href = "payment.html?source=daily_pass";
             }, 600);
