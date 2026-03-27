@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Renewal - Bus Pass Management</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path
+                    d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2" />
+                <circle cx="7" cy="17" r="2" />
+                <path d="M9 17h6" />
+                <circle cx="17" cy="17" r="2" />
+            </svg>
+            BusPass
+        </div>
+        <div class="nav-links">
+            <a href="pass-action.html">Back</a>
+        </div>
+    </nav>
+    <div class="container center-layout" style="align-items: flex-start; margin-top: 2rem;">
+        <div class="card wide-card">
+            <h2 class="card-title">Renew Your Pass</h2>
+            <p class="card-subtitle">Verify your route details and select your validity period (30 Days).</p>
+            <form onsubmit="handleRenewalSubmit(event)">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" id="fullName" class="form-control" placeholder="Applicant Name" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Existing Pass Number</label>
+                        <input type="text" class="form-control" value="BP-2023-8941" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Pass Type</label>
+                        <input type="text" class="form-control" id="renewalPassType" value="" readonly>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Bus Number</label>
+                        <select class="form-control" id="routeNum" required onchange="handleRouteSelection(this)">
+                            <option value="">Select a Route</option>
+                            <option value="309">309 – Dehu Gaon → Alandi (via Chikhali, Moshi)</option>
+                            <option value="309A">309A – Dehu Gaon → Alandi (alternate route)</option>
+                            <option value="330">330 – Dehu Gaon → Alandi (via Chikhali, Moshi)</option>
+                            <option value="362">362 – Alandi → YCM (via Moshi)</option>
+                            <option value="323">323 – Chikhali → PMC (via Moshi, Pimpri)</option>
+                            <option value="326">326 – Pimpri → Chikhali</option>
+                            <option value="358B">358B – Chakan Ambethan Chowk → Bhosari</option>
+                            <option value="343A">343A – Bhosari → Talegaon Dabhade (via Chakan side)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Calculated Fare (₹)</label>
+                        <input type="text" class="form-control" value="₹ 750" id="calcFare" readonly
+                            style="background-color: #f1f5f9; color: var(--primary); font-weight: 700;">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Source Station</label>
+                        <input type="text" class="form-control" id="srcCity" value="" required readonly style="background-color: #f1f5f9;">
+                    </div>
+                    <div class="form-group">
+                        <label>Destination Station</label>
+                        <input type="text" class="form-control" id="destCity" value="" required readonly style="background-color: #f1f5f9;">
+                    </div>
+                </div>
+                <hr style="border:0; border-top:1px solid var(--border); margin: 2rem 0;">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Pass Duration</label>
+                        <select class="form-control" id="passDuration" required onchange="calculateEndDate()">
+                            <option value="1">1 Month</option>
+                            <option value="3">3 Months</option>
+                            <option value="6">6 Months</option>
+                            <option value="12">1 Year</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Start Date</label>
+                        <input type="date" class="form-control" id="startDate" required onchange="calculateEndDate()">
+                    </div>
+                    <div class="form-group">
+                        <label>Calculated Expiry Date</label>
+                        <input type="date" class="form-control" id="endDate" readonly
+                            style="background-color: #f1f5f9; color: var(--primary); font-weight: 600;">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary" style="margin-top: 1rem;">Pay & Renew Fast</button>
+            </form>
+        </div>
+    </div>
+    <script src="script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const passType = localStorage.getItem('selectedPassType') || 'Normal';
+            document.getElementById('renewalPassType').value = passType;
+            // Set today as min date for start
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('startDate').setAttribute('min', today);
+            document.getElementById('startDate').value = today;
+            // Auto calc initial end date
+            calculateEndDate();
+        });
+        function calculateEndDate() {
+            const startInput = document.getElementById('startDate').value;
+            const duration = parseInt(document.getElementById('passDuration')?.value || 1);
+            if (!startInput) return;
+            const date = new Date(startInput);
+            date.setMonth(date.getMonth() + duration);
+            const endInput = document.getElementById('endDate');
+            endInput.value = date.toISOString().split('T')[0];
+            // Update Fare dynamically based on duration
+            const fares = { 1: "₹ 750", 3: "₹ 2000", 6: "₹ 3000", 12: "₹ 5000" };
+            const fareInput = document.getElementById('calcFare');
+            if (fareInput) {
+                fareInput.value = fares[duration] || "₹ 750";
+            }
+        }
+        function handleRouteSelection(select) {
+            if (!select.value) {
+                document.getElementById('srcCity').value = '';
+                document.getElementById('destCity').value = '';
+                return;
+            }
+            const text = select.options[select.selectedIndex].text;
+            const match = text.match(/–\s*(.+?)\s*→\s*(.+?)(?:\s*\(|$)/);
+            if (match) {
+                document.getElementById('srcCity').value = match[1].trim();
+                document.getElementById('destCity').value = match[2].trim();
+            }
+        }
+        function handleRenewalSubmit(e) {
+            e.preventDefault();
+            const btn = e.target.querySelector('button');
+            const originalText = btn.textContent;
+            btn.textContent = "Redirecting to Payment...";
+            btn.style.opacity = "0.7";
+            // Save details for Monthly Pass projection
+            const busSelect = document.getElementById('routeNum');
+            if(busSelect && busSelect.value) {
+                const text = busSelect.options[busSelect.selectedIndex].text;
+                localStorage.setItem('monthlyPassBus', text.split('–')[0].trim());
+                localStorage.setItem('monthlyPassRoute', text);
+            }
+            const nameInput = document.getElementById('fullName');
+            if(nameInput && nameInput.value) {
+                localStorage.setItem('monthlyPassName', nameInput.value);
+            }
+            localStorage.setItem('monthlyPassType', document.getElementById('renewalPassType').value);
+            localStorage.setItem('monthlyPassEnd', document.getElementById('endDate').value);
+            localStorage.setItem('monthlyPassSrc', document.getElementById('srcCity').value);
+            localStorage.setItem('monthlyPassDest', document.getElementById('destCity').value);
+            setTimeout(() => {
+                window.location.href = "payment.html";
+            }, 800);
+        }
+    </script>
+</body>
+</html>

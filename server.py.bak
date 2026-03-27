@@ -4,12 +4,17 @@ import sqlite3
 import json
 import hashlib
 import os
-PORT = 8082
+
+os.chdir(os.path.dirname(__file__))
+PORT = int(os.environ.get("PORT", 8082))
 DB_NAME = "users.db"
+
 # Initialize SQLite Database
 def init_db():
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
+    
+    # 1. Create the Users table
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -18,25 +23,45 @@ def init_db():
             password_hash TEXT NOT NULL
         )
     ''')
+    
+    # 2. Add this: Create the Passes table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS passes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            pass_type TEXT NOT NULL,
+            bus_number TEXT NOT NULL,
+            issue_date TEXT NOT NULL,
+            expiry_date TEXT NOT NULL,
+            FOREIGN KEY(user_id) REFERENCES users(id)
+        )
+    ''')
+    
     conn.commit()
     conn.close()
+
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
+
 class AuthHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
         if self.path == '/':
             self.path = '/login.html'
         return http.server.SimpleHTTPRequestHandler.do_GET(self)
+
     def do_POST(self):
         content_length = int(self.headers['Content-Length'])
         post_data = self.rfile.read(content_length)
         data = json.loads(post_data.decode('utf-8'))
-        username = data.get("username")
-        email = data.get("email")
-        password = data.get("password")
+
         conn = sqlite3.connect(DB_NAME)
         cursor = conn.cursor()
+
         if self.path == '/register':
+            username = data.get("username")
+            email = data.get("email")
+            password = data.get("password")
+            
             if not username or not email or not password:
                 self.send_response(400)
                 self.end_headers()
@@ -51,12 +76,17 @@ class AuthHandler(http.server.SimpleHTTPRequestHandler):
             except sqlite3.IntegrityError:
                 response = {"error": "User already exists!"}
                 status_code = 409
+                
         elif self.path == '/login':
+            email = data.get("email")
+            password = data.get("password")
+            
             if not email or not password:
                 self.send_response(400)
                 self.end_headers()
                 self.wfile.write(json.dumps({"error": "Missing email or password"}).encode())
                 return
+                
             cursor.execute('SELECT id, password_hash FROM users WHERE email = ?', (email,))
             user = cursor.fetchone()
             
@@ -70,17 +100,43 @@ class AuthHandler(http.server.SimpleHTTPRequestHandler):
             else:
                 response = {"error": "No login found. Please register as a new user!"}
                 status_code = 404
+                
+        # 3. Add this: The endpoint to store the passes
+        elif self.path == '/add_pass':
+            user_id = data.get("user_id")
+            pass_type = data.get("pass_type")
+            bus_number = data.get("bus_number")
+            issue_date = data.get("issue_date")
+            expiry_date = data.get("expiry_date")
+            
+            if not all([user_id, pass_type, bus_number, issue_date, expiry_date]):
+                self.send_response(400)
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": "Missing pass details"}).encode())
+                return
+                
+            cursor.execute('''INSERT INTO passes (user_id, pass_type, bus_number, issue_date, expiry_date) 
+                              VALUES (?, ?, ?, ?, ?)''', 
+                           (user_id, pass_type, bus_number, issue_date, expiry_date))
+            conn.commit()
+            response = {"message": "Pass stored successfully!"}
+            status_code = 201
+            
         else:
             response = {"error": "Not found"}
             status_code = 404
             
         conn.close()
+
         self.send_response(status_code)
         self.send_header('Content-Type', 'application/json')
+        # Add CORS headers so your frontend is absolutely allowed to make this request
+        self.send_header('Access-Control-Allow-Origin', '*') 
         self.end_headers()
         self.wfile.write(json.dumps(response).encode())
+
 if __name__ == "__main__":
     init_db()
-    with socketserver.TCPServer(("", PORT), AuthHandler) as httpd:
-        print(f"Serving at http://localhost:{PORT}")
+    with socketserver.TCPServer(("0.0.0.0", PORT), AuthHandler) as httpd:
+        print(f"Serving at http://0.0.0.0:{PORT}")
         httpd.serve_forever()

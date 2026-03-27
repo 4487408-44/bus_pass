@@ -59,8 +59,52 @@
                 
                 if (response.ok) {
                     if (path === '/login') {
-                        alert('Login successful!');
-                        window.location.href = '/dashboard.html'; // Assuming they have a dashboard they are trying to reach.
+                        // 1. Save user_id to identify them
+                        localStorage.setItem('user_id', data.user_id);
+                        localStorage.setItem('username', email.split('@')[0]);
+                        
+                        // 2. Clear out any old passes from the previous user's login
+                        localStorage.removeItem('monthlyPassType');
+                        localStorage.removeItem('monthlyPassEnd');
+                        localStorage.removeItem('monthlyPassRoute');
+                        localStorage.removeItem('monthlyPassName');
+                        localStorage.removeItem('dailyPassType');
+                        localStorage.removeItem('dailyPassEnd');
+                        localStorage.removeItem('dailyPassRoute');
+                        localStorage.removeItem('dailyPassName');
+                        
+                        alert('Login successful! Fetching your passes...');
+                        
+                        // 3. Download their passes from the database
+                        try {
+                            const passRes = await fetch('http://localhost:8082/get_passes', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ user_id: data.user_id })
+                            });
+                            if (passRes.ok) {
+                                const passData = await passRes.json();
+                                if (passData.passes) {
+                                    passData.passes.forEach(p => {
+                                        if (p.pass_type === 'Daily') {
+                                            localStorage.setItem('dailyPassType', p.pass_type);
+                                            localStorage.setItem('dailyPassEnd', p.expiry_date);
+                                            localStorage.setItem('dailyPassRoute', p.bus_number);
+                                            localStorage.setItem('dailyPassName', localStorage.getItem('username'));
+                                        } else {
+                                            localStorage.setItem('monthlyPassType', p.pass_type);
+                                            localStorage.setItem('monthlyPassEnd', p.expiry_date);
+                                            localStorage.setItem('monthlyPassRoute', p.bus_number);
+                                            localStorage.setItem('monthlyPassName', localStorage.getItem('username'));
+                                        }
+                                    });
+                                }
+                            }
+                        } catch(e) {
+                            console.error('Could not download passes from database:', e);
+                        }
+
+                        window.location.href = '/dashboard.html';
                     } else {
                         alert("User registered successfully! You can now login.");
                     }

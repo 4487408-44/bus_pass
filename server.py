@@ -114,6 +114,19 @@ class AuthHandler(http.server.SimpleHTTPRequestHandler):
                 conn.commit()
                 return self.send_json_response(201, {"message": "Pass stored successfully!"})
             
+        elif self.path == '/get_passes':
+            user_id = data.get("user_id")
+            
+            if not user_id:
+                return self.send_json_response(400, {"error": "Missing user_id"})
+                
+            with sqlite3.connect(DB_PASSES) as conn:
+                cursor = conn.cursor()
+                cursor.execute('SELECT pass_type, bus_number, issue_date, expiry_date FROM passes WHERE user_id = ?', (user_id,))
+                passes = [{"pass_type": row[0], "bus_number": row[1], "issue_date": row[2], "expiry_date": row[3]} for row in cursor.fetchall()]
+                
+                return self.send_json_response(200, {"passes": passes})
+            
         else:
             return self.send_json_response(404, {"error": "Not found"})
             

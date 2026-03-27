@@ -259,6 +259,32 @@
             localStorage.setItem('monthlyPassSrc', document.getElementById('srcCity').value);
             localStorage.setItem('monthlyPassDest', document.getElementById('destCity').value);
             
+            // -------------------------------------------------------------
+            // Store New Pass in Database
+            // -------------------------------------------------------------
+            const userId = localStorage.getItem('user_id'); 
+            if (userId) {
+                const passData = {
+                    user_id: parseInt(userId),
+                    pass_type: document.getElementById('newPassTypeHeader').textContent || 'Monthly',
+                    bus_number: document.getElementById('routeSelect').options[document.getElementById('routeSelect').selectedIndex]?.text.split('–')[0].trim() || 'All',
+                    issue_date: document.getElementById('startNewDate').value,
+                    expiry_date: document.getElementById('endNewDate').value
+                };
+
+                fetch('http://localhost:8082/add_pass', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(passData)
+                })
+                .then(res => res.json())
+                .then(data => console.log('New Pass Stored in DB:', data))
+                .catch(err => console.error('Error storing pass:', err));
+            } else {
+                console.warn('User ID missing. DB storage skipped.');
+            }
+            // -------------------------------------------------------------
+            
             progressContainer.style.display = 'block';
             progressText.style.display = 'block';
             
