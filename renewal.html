@@ -164,6 +164,29 @@
             localStorage.setItem('monthlyPassEnd', document.getElementById('endDate').value);
             localStorage.setItem('monthlyPassSrc', document.getElementById('srcCity').value);
             localStorage.setItem('monthlyPassDest', document.getElementById('destCity').value);
+	const userId = localStorage.getItem('user_id'); // Make sure user_id is saved in localStorage at login
+    if (userId) {
+        const passData = {
+            user_id: parseInt(userId),
+            pass_type: document.getElementById('renewalPassType').value || 'Monthly',
+            bus_number: document.getElementById('routeNum').options[document.getElementById('routeNum').selectedIndex]?.text.split('–')[0].trim() || 'All',
+            issue_date: document.getElementById('startDate').value,
+            expiry_date: document.getElementById('endDate').value
+        };
+
+        fetch('http://localhost:8082/add_pass', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(passData)
+        })
+        .then(res => res.json())
+        .then(data => console.log('Monthly Pass Stored in DB:', data))
+        .catch(err => console.error('Error storing pass:', err));
+    } else {
+        console.warn('User ID missing. DB storage skipped.');
+    }
+    // -------------------------------------------------------------
+
             setTimeout(() => {
                 window.location.href = "payment.html";
             }, 800);
