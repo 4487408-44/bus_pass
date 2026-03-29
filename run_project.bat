@@ -1,4 +1,3 @@
-cd C:\Users\Shradha\OneDrive\Desktop\Project
-start http://localhost:8082
+cd C:\Project
 python server.py
-pause
+start http://localhost:8082

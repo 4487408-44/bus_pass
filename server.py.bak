@@ -6,16 +6,18 @@ import hashlib
 import os
 
 os.chdir(os.path.dirname(__file__))
-PORT = int(os.environ.get("PORT", 8082))
-DB_NAME = "users.db"
+PORT = 8083   # fixed port
 
-# Initialize SQLite Database
+# Database files
+DB_USERS = "users.db"
+DB_PASSES = "passes.db"
+
+# Initialize Databases
 def init_db():
-    conn = sqlite3.connect(DB_NAME)
-    cursor = conn.cursor()
-    
-    # 1. Create the Users table
-    cursor.execute('''
+    # Users DB
+    conn_users = sqlite3.connect(DB_USERS)
+    cursor_users = conn_users.cursor()
+    cursor_users.execute('''
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT NOT NULL,
@@ -23,9 +25,13 @@ def init_db():
             password_hash TEXT NOT NULL
         )
     ''')
-    
-    # 2. Add this: Create the Passes table
-    cursor.execute('''
+    conn_users.commit()
+    conn_users.close()
+
+    # Passes DB
+    conn_passes = sqlite3.connect(DB_PASSES)
+    cursor_passes = conn_passes.cursor()
+    cursor_passes.execute('''
         CREATE TABLE IF NOT EXISTS passes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER NOT NULL,
@@ -33,108 +39,146 @@ def init_db():
             bus_number TEXT NOT NULL,
             issue_date TEXT NOT NULL,
             expiry_date TEXT NOT NULL,
-            FOREIGN KEY(user_id) REFERENCES users(id)
+            status TEXT DEFAULT 'Active'
         )
     ''')
-    
-    conn.commit()
-    conn.close()
+    conn_passes.commit()
+    conn_passes.close()
 
+# Password hashing
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
 class AuthHandler(http.server.SimpleHTTPRequestHandler):
+
     def do_GET(self):
         if self.path == '/':
             self.path = '/login.html'
         return http.server.SimpleHTTPRequestHandler.do_GET(self)
+
+    def do_OPTIONS(self):
+        self.send_response(200)
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        self.end_headers()
 
     def do_POST(self):
         content_length = int(self.headers['Content-Length'])
         post_data = self.rfile.read(content_length)
         data = json.loads(post_data.decode('utf-8'))
 
-        conn = sqlite3.connect(DB_NAME)
-        cursor = conn.cursor()
-
+        # ================= REGISTER =================
         if self.path == '/register':
             username = data.get("username")
             email = data.get("email")
             password = data.get("password")
-            
+
             if not username or not email or not password:
-                self.send_response(400)
-                self.end_headers()
-                self.wfile.write(json.dumps({"error": "Missing username, email or password"}).encode())
-                return
-                
-            try:
-                cursor.execute('INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)', (username, email, hash_password(password)))
-                conn.commit()
-                response = {"message": "User registered successfully!"}
-                status_code = 201
-            except sqlite3.IntegrityError:
-                response = {"error": "User already exists!"}
-                status_code = 409
-                
+                return self.send_json_response(400, {"error": "Missing fields"})
+
+            with sqlite3.connect(DB_USERS) as conn:
+                cursor = conn.cursor()
+                try:
+                    cursor.execute(
+                        'INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)',
+                        (username, email, hash_password(password))
+                    )
+                    conn.commit()
+                    return self.send_json_response(201, {"message": "User registered successfully!"})
+                except sqlite3.IntegrityError:
+                    return self.send_json_response(409, {"error": "User already exists!"})
+
+        # ================= LOGIN =================
         elif self.path == '/login':
             email = data.get("email")
             password = data.get("password")
-            
+
             if not email or not password:
-                self.send_response(400)
-                self.end_headers()
-                self.wfile.write(json.dumps({"error": "Missing email or password"}).encode())
-                return
-                
-            cursor.execute('SELECT id, password_hash FROM users WHERE email = ?', (email,))
-            user = cursor.fetchone()
-            
-            if user:
-                if user[1] == hash_password(password):
-                    response = {"message": "Login successful!", "user_id": user[0]}
-                    status_code = 200
+                return self.send_json_response(400, {"error": "Missing email or password"})
+
+            with sqlite3.connect(DB_USERS) as conn:
+                cursor = conn.cursor()
+                cursor.execute('SELECT id, password_hash FROM users WHERE email = ?', (email,))
+                user = cursor.fetchone()
+
+                if user and user[1] == hash_password(password):
+                    return self.send_json_response(200, {"message": "Login successful!", "user_id": user[0]})
+                elif user:
+                    return self.send_json_response(401, {"error": "Invalid password"})
                 else:
-                    response = {"error": "Invalid password."}
-                    status_code = 401
-            else:
-                response = {"error": "No login found. Please register as a new user!"}
-                status_code = 404
-                
-        # 3. Add this: The endpoint to store the passes
+                    return self.send_json_response(404, {"error": "User not found"})
+
+        # ================= ADD PASS =================
         elif self.path == '/add_pass':
             user_id = data.get("user_id")
             pass_type = data.get("pass_type")
             bus_number = data.get("bus_number")
-            issue_date = data.get("issue_date")
-            expiry_date = data.get("expiry_date")
-            
-            if not all([user_id, pass_type, bus_number, issue_date, expiry_date]):
-                self.send_response(400)
-                self.end_headers()
-                self.wfile.write(json.dumps({"error": "Missing pass details"}).encode())
-                return
-                
-            cursor.execute('''INSERT INTO passes (user_id, pass_type, bus_number, issue_date, expiry_date) 
-                              VALUES (?, ?, ?, ?, ?)''', 
-                           (user_id, pass_type, bus_number, issue_date, expiry_date))
-            conn.commit()
-            response = {"message": "Pass stored successfully!"}
-            status_code = 201
-            
-        else:
-            response = {"error": "Not found"}
-            status_code = 404
-            
-        conn.close()
 
+            from datetime import datetime, timedelta
+
+            issue_date = datetime.now().strftime("%Y-%m-%d")
+
+            if pass_type.lower() == "daily":
+                expiry_date = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
+            elif pass_type.lower() == "monthly":
+                expiry_date = (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d")
+            else:
+                expiry_date = issue_date
+
+            if not all([user_id, pass_type, bus_number]):
+                return self.send_json_response(400, {"error": "Missing pass details"})
+
+            with sqlite3.connect(DB_PASSES) as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    INSERT INTO passes (user_id, pass_type, bus_number, issue_date, expiry_date)
+                    VALUES (?, ?, ?, ?, ?)
+                ''', (user_id, pass_type, bus_number, issue_date, expiry_date))
+                conn.commit()
+
+            return self.send_json_response(201, {"message": "Pass stored successfully!"})
+
+        # ================= GET PASSES =================
+        elif self.path == '/get_passes':
+            user_id = data.get("user_id")
+
+            if not user_id:
+                return self.send_json_response(400, {"error": "Missing user_id"})
+
+            from datetime import datetime
+            today = datetime.now().strftime("%Y-%m-%d")
+
+            with sqlite3.connect(DB_PASSES) as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT pass_type, bus_number, issue_date, expiry_date 
+                    FROM passes 
+                    WHERE user_id = ? AND expiry_date >= ?
+                ''', (user_id, today))
+
+                passes = [{
+                    "pass_type": row[0],
+                    "bus_number": row[1],
+                    "issue_date": row[2],
+                    "expiry_date": row[3]
+                } for row in cursor.fetchall()]
+
+            return self.send_json_response(200, {"passes": passes})
+
+        # ================= DEFAULT =================
+        else:
+            return self.send_json_response(404, {"error": "Not found"})
+
+    # Helper function
+    def send_json_response(self, status_code, response_dict):
         self.send_response(status_code)
         self.send_header('Content-Type', 'application/json')
-        # Add CORS headers so your frontend is absolutely allowed to make this request
-        self.send_header('Access-Control-Allow-Origin', '*') 
+        self.send_header('Access-Control-Allow-Origin', '*')
         self.end_headers()
-        self.wfile.write(json.dumps(response).encode())
+        self.wfile.write(json.dumps(response_dict).encode())
 
+# ================= MAIN =================
 if __name__ == "__main__":
     init_db()
     with socketserver.TCPServer(("0.0.0.0", PORT), AuthHandler) as httpd:
