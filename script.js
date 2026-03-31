@@ -1,50 +1,101 @@
 // script.js
-// Handles global interactions and auth mocks
+
 document.addEventListener('DOMContentLoaded', () => {
-    // Setup login/register listeners if on index.html
-    const loginForm = document.getElementById('loginForm');
-    // Strict lowercase case-sensitive email validation regex (allows numbers e.g. xyz1234@gmail.com)
+
     const emailRegex = /^[a-z0-9._%+-]+@(gmail\.com|yahoo\.com|outlook\.com|hotmail\.com)$/;
+
+    // ===== LOGIN =====
+    const loginForm = document.getElementById('loginForm');
+
     if (loginForm) {
-        loginForm.addEventListener('submit', (e) => {
+        loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const emailInput = document.getElementById('username').value;
-            if (!emailRegex.test(emailInput)) {
-                alert('Please enter a valid lowercase email address with a proper domain (e.g., xyz1234@gmail.com).');
+
+            const email = document.getElementById('username').value;
+            const password = document.getElementById('password')?.value || "123";
+
+            if (!emailRegex.test(email)) {
+                alert('Enter valid email');
                 return;
             }
-            const btn = e.target.querySelector('button');
-            const ogText = btn.textContent;
-            btn.textContent = "Verifying...";
-            btn.style.opacity = '0.8';
-            setTimeout(() => {
-                window.location.href = 'dashboard.html';
-            }, 800);
+
+            try {
+                const res = await fetch('http://localhost:8082/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    // ✅ SAVE USER ID
+                    localStorage.setItem("user_id", data.user_id);
+                    localStorage.setItem("username", email.split('@')[0]);
+
+                    window.location.href = "dashboard.html";
+                } else {
+                    alert(data.error);
+                }
+
+            } catch (err) {
+                alert("Server error");
+            }
         });
     }
+
+    // ===== REGISTER =====
     const registerForm = document.getElementById('registerForm');
+
     if (registerForm) {
-        registerForm.addEventListener('submit', (e) => {
+        registerForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const emailInput = document.getElementById('regEmail').value;
-            if (!emailRegex.test(emailInput)) {
-                alert('Please use a valid email address with a proper domain (e.g., @gmail.com, @yahoo.com) for registration.');
+
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword')?.value || "123";
+            const username = email.split('@')[0];
+
+            if (!emailRegex.test(email)) {
+                alert('Enter valid email');
                 return;
             }
-            alert('Registration Successful! Please login.');
-            toggleForms();
+
+            try {
+                const res = await fetch('http://localhost:8082/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, email, password })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    alert("Registered! Now login.");
+                    toggleForms();
+                } else {
+                    alert(data.error);
+                }
+
+            } catch (err) {
+                alert("Server error");
+            }
         });
     }
+
 });
+
+// ===== TOGGLE FORMS =====
 function toggleForms() {
     const loginCard = document.getElementById('loginCard');
     const registerCard = document.getElementById('registerCard');
+
     if (loginCard && registerCard) {
         loginCard.classList.toggle('hidden');
         registerCard.classList.toggle('hidden');
     }
 }
-// Store the pass type choice to display correctly on the next page
+
+// ===== STORE PASS TYPE =====
 function setPassType(type) {
     localStorage.setItem('selectedPassType', type);
 }

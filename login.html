@@ -29,107 +29,116 @@
             </form>
         </div>
     </div>
+	
+	
+	
+	<script>
+const form = document.getElementById('authForm');
 
-    <script>
-        const form = document.getElementById('authForm');
-        const msgDiv = document.getElementById('message');
+async function submitAuth(path) {
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
 
-        function showMessage(msg, isError = false) {
-            msgDiv.textContent = msg;
-            msgDiv.className = `message ${isError ? 'error' : 'success'}`;
-        }
+    if (!email || !password) {
+        alert('Please fill in both fields.');
+        return;
+    }
 
-        async function submitAuth(path) {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
+    try {
+        const response = await fetch(path, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
 
-            if (!email || !password) {
-                alert('Please fill in both fields.');
-                return;
-            }
+        const data = await response.json();
 
-            try {
-                const response = await fetch(path, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password })
-                });
+        if (response.ok) {
 
-                const data = await response.json();
-                
-                if (response.ok) {
-						if (path.includes('login'))					{
-                        // 1. Save user_id to identify them
-                        localStorage.setItem('user_id', data.user_id);
-                        localStorage.setItem('username', email.split('@')[0]);
-                        
-                        // 2. Clear out any old passes from the previous user's login
-                        localStorage.removeItem('monthlyPassType');
-                        localStorage.removeItem('monthlyPassEnd');
-                        localStorage.removeItem('monthlyPassRoute');
-                        localStorage.removeItem('monthlyPassName');
-                        localStorage.removeItem('dailyPassType');
-                        localStorage.removeItem('dailyPassEnd');
-                        localStorage.removeItem('dailyPassRoute');
-                        localStorage.removeItem('dailyPassName');
-                        
-                        alert('Login successful! Fetching your passes...');
-                        
-                        // 3. Download their passes from the database
-                        try {
-                            const passRes = await fetch('http://localhost:8082/get_passes', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ user_id: data.user_id })
-                            });
-                            if (passRes.ok) {
-                                const passData = await passRes.json();
-                                if (passData.passes) {
-                                    passData.passes.forEach(p => {
-                                        if (p.pass_type.toLowerCase() === 'daily')										{
-                                            localStorage.setItem('dailyPassType', p.pass_type);
-                                            localStorage.setItem('dailyPassEnd', p.expiry_date);
-                                            localStorage.setItem('dailyPassRoute', p.bus_number);
-                                            localStorage.setItem('dailyPassName', localStorage.getItem('username'));
-                                        } else {
-                                            localStorage.setItem('monthlyPassType', p.pass_type);
-                                            localStorage.setItem('monthlyPassEnd', p.expiry_date);
-                                            localStorage.setItem('monthlyPassRoute', p.bus_number);
-                                            localStorage.setItem('monthlyPassName', localStorage.getItem('username'));
-                                        }
-                                    });
+            // ✅ LOGIN SUCCESS
+            if (path.includes('login')) {
+
+                // 1. Save user info
+                localStorage.setItem('user_id', data.user_id);
+                localStorage.setItem('username', email.split('@')[0]);
+
+                // 2. Clear old pass data
+                localStorage.removeItem('monthlyPassType');
+                localStorage.removeItem('monthlyPassEnd');
+                localStorage.removeItem('monthlyPassRoute');
+                localStorage.removeItem('monthlyPassName');
+                localStorage.removeItem('dailyPassType');
+                localStorage.removeItem('dailyPassEnd');
+                localStorage.removeItem('dailyPassRoute');
+                localStorage.removeItem('dailyPassName');
+
+                alert('Login successful! Loading your passes...');
+
+                // 3. Fetch passes from DB
+                try {
+                    const passRes = await fetch('http://localhost:8082/get_passes', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ user_id: data.user_id })
+                    });
+
+                    if (passRes.ok) {
+                        const passData = await passRes.json();
+                        console.log("PASS DATA:", passData);
+
+                        if (passData.passes && passData.passes.length > 0) {
+
+                            passData.passes.forEach(p => {
+
+                                // ✅ CORRECT FIELD NAMES
+                                if (p.type.toLowerCase() === 'daily') {
+
+                                    localStorage.setItem('dailyPassType', p.type);
+                                    localStorage.setItem('dailyPassEnd', p.expiry_date);
+                                    localStorage.setItem('dailyPassRoute', p.bus);
+                                    localStorage.setItem('dailyPassName', localStorage.getItem('username'));
+
+                                } else {
+
+                                    localStorage.setItem('monthlyPassType', p.type);
+                                    localStorage.setItem('monthlyPassEnd', p.expiry_date);
+                                    localStorage.setItem('monthlyPassRoute', p.bus);
+                                    localStorage.setItem('monthlyPassName', localStorage.getItem('username'));
                                 }
-                            }
-                        } catch(e) {
-                            console.error('Could not download passes from database:', e);
+                            });
                         }
-
-                        window.location.href = '/dashboard.html';
-                    } else {
-                        alert("User registered successfully! You can now login.");
                     }
-                } else {
-                    if (data.error === "User already exists!") {
-                        alert("User already registered. Please Login.");
-                    } else {
-                        alert(data.error || 'An error occurred');
-                    }
+                } catch (e) {
+                    console.error('Error fetching passes:', e);
                 }
-            } catch (err) {
-                alert('Failed to connect to server.');
+
+                // 4. Go to dashboard
+                window.location.href = '/dashboard.html';
+
+            } else {
+                alert("User registered successfully! You can now login.");
             }
+
+        } else {
+            alert(data.error || 'An error occurred');
         }
 
-        document.getElementById('loginBtn').addEventListener('click', (e) => {
-            e.preventDefault();
-			submitAuth('http://localhost:8082/login');
+    } catch (err) {
+        alert('Failed to connect to server.');
+    }
+}
 
-        });
+// BUTTON EVENTS
+document.getElementById('loginBtn').addEventListener('click', (e) => {
+    e.preventDefault();
+    submitAuth('http://localhost:8082/login');
+});
 
-        document.getElementById('registerBtn').addEventListener('click', (e) => {
-            e.preventDefault();
-            window.location.href = '/register.html';
-        });
-    </script>
-</body>
+document.getElementById('registerBtn').addEventListener('click', (e) => {
+    e.preventDefault();
+    window.location.href = '/register.html';
+});
+</script>
+
+    </body>
 </html>

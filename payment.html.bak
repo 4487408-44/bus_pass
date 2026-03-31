@@ -6,7 +6,6 @@
     <title>Payment - Bus Pass Management</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-	<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
     <style>
         .qr-placeholder {
@@ -110,53 +109,15 @@ function toggleUpi(type) {
 function processPayment(e) {
     e.preventDefault();
 
-    const amount = 850; // dynamic later if needed
+    const btn = e.target.querySelector('button');
+    btn.textContent = "Processing...";
+    btn.disabled = true;
 
-    fetch("http://localhost:8082/create_order", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ amount })
-    })
-    .then(res => res.json())
-    .then(order => {
-
-        var options = {
-            "key": "YOUR_KEY_ID",   // 🔥 replace with your Razorpay KEY
-            "amount": order.amount,
-            "currency": "INR",
-            "name": "Bus Pass System",
-            "description": "Bus Pass Payment",
-            "order_id": order.id,
-
-            "handler": function (response) {
-                // ✅ Payment success
-                alert("Payment Successful");
-
-                // 👉 Redirect
-                window.location.href = "status.html?success=true";
-            },
-
-            "prefill": {
-                "email": localStorage.getItem("username") + "@gmail.com"
-            },
-
-            "theme": {
-                "color": "#2563eb"
-            }
-        };
-
-        var rzp = new Razorpay(options);
-        rzp.open();
-
-    })
-    .catch(err => {
-        alert("Payment failed");
-        console.error(err);
-    });
+    setTimeout(() => {
+        // redirect after payment
+        window.location.href = "status.html?success=true";
+    }, 1500);
 }
-
 </script>
 
 </body>
